@@ -1,2 +1,41 @@
-import {useState} from 'react';
-export default function QuestionPanel({jobId}:any){const [q,setQ]=useState(''); const [out,setOut]=useState(''); async function ask(){setOut(''); const r=await fetch(`/api/jobs/${jobId}/questions/stream`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})}); const reader=r.body!.getReader(); const dec=new TextDecoder(); while(true){const {value,done}=await reader.read(); if(done) break; setOut(o=>o+dec.decode(value));}} return <div><input className="question" placeholder="Вопрос" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') ask()}}/><button onClick={ask}>Спросить</button><pre>{out}</pre></div>}
+import { useState } from 'react';
+
+type Props = { jobId: string };
+
+export default function QuestionPanel({ jobId }: Props) {
+  const [question, setQuestion] = useState('');
+  const [output, setOutput] = useState('');
+
+  async function ask() {
+    setOutput('');
+    const response = await fetch(`/api/jobs/${jobId}/questions/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    if (!response.body) return;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      setOutput((current) => current + decoder.decode(value));
+    }
+  }
+
+  return (
+    <div>
+      <input
+        className="question"
+        placeholder="Вопрос"
+        value={question}
+        onChange={(event) => setQuestion(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') void ask();
+        }}
+      />
+      <button onClick={() => void ask()}>Спросить</button>
+      <pre>{output}</pre>
+    </div>
+  );
+}

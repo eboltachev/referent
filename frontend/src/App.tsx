@@ -1,2 +1,53 @@
-import {useEffect,useState} from 'react'; import Header from './components/Header'; import UploadButton from './components/UploadButton'; import RecordButton from './components/RecordButton'; import CancelButton from './components/CancelButton'; import ResultsBlock from './components/ResultsBlock'; import {uploadFile,getJob,getResults,cancelJob} from './api/client';
-export default function App(){const [job,setJob]=useState<any>(); const [results,setResults]=useState<any>(); const status=job?`${job.progress_percent}% ${job.current_step||job.status}`:''; async function start(f:File, rec=false){setResults(undefined); const j=await uploadFile(f,rec); setJob({id:j.job_id,status:j.status,progress_percent:0});} async function reload(){if(job) setResults(await getResults(job.id));} useEffect(()=>{if(!job?.id) return; const t=setInterval(async()=>{const j=await getJob(job.id); setJob(j); if(['SUCCESS','ERROR','CANCELLED'].includes(j.status)){clearInterval(t); if(j.status==='SUCCESS') setResults(await getResults(job.id));}},1000); return()=>clearInterval(t)},[job?.id]); const processing=job&&['PENDING','PROCESSING'].includes(job.status); return <main><Header/><div className="buttons"><UploadButton onFile={(f:File)=>start(f,false)} status={status}/><RecordButton onBlob={(f:File)=>start(f,true)} status={status}/></div>{processing&&<CancelButton onCancel={()=>cancelJob(job.id)}/>} {results&&<ResultsBlock jobId={job.id} results={results} reload={reload}/>}</main>}
+import { useEffect, useState } from 'react';
+import { cancelJob, getJob, getResults, uploadFile } from './api/client';
+import CancelButton from './components/CancelButton';
+import Header from './components/Header';
+import RecordButton from './components/RecordButton';
+import ResultsBlock from './components/ResultsBlock';
+import UploadButton from './components/UploadButton';
+import type { JobResults, JobStatus } from './types';
+
+export default function App() {
+  const [job, setJob] = useState<JobStatus | undefined>();
+  const [results, setResults] = useState<JobResults | undefined>();
+  const status = job ? `${job.progress_percent}% ${job.current_step || job.status}` : '';
+
+  async function start(file: File, recording = false) {
+    setResults(undefined);
+    const created = await uploadFile(file, recording);
+    setJob({ id: created.job_id, status: created.status, progress_percent: 0 });
+  }
+
+  async function reload() {
+    if (job) setResults(await getResults(job.id));
+  }
+
+  useEffect(() => {
+    if (!job?.id) return undefined;
+    const timer = window.setInterval(() => {
+      void (async () => {
+        const latest = await getJob(job.id);
+        setJob(latest);
+        if (['SUCCESS', 'ERROR', 'CANCELLED'].includes(latest.status)) {
+          window.clearInterval(timer);
+          if (latest.status === 'SUCCESS') setResults(await getResults(job.id));
+        }
+      })();
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [job?.id]);
+
+  const processing = job && ['PENDING', 'PROCESSING'].includes(job.status);
+
+  return (
+    <main>
+      <Header />
+      <div className="buttons">
+        <UploadButton onFile={(file) => void start(file, false)} status={status} />
+        <RecordButton onBlob={(file) => void start(file, true)} status={status} />
+      </div>
+      {processing && <CancelButton onCancel={() => void cancelJob(job.id)} />}
+      {results && job && <ResultsBlock jobId={job.id} results={results} reload={() => void reload()} />}
+    </main>
+  );
+}
