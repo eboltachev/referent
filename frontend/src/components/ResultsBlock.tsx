@@ -1,0 +1,2 @@
+import QuestionPanel from './QuestionPanel'; import SpeakersPanel from './SpeakersPanel'; import TranscriptPanel from './TranscriptPanel';
+export default function ResultsBlock({jobId,results,reload}:any){return <section className="results"><QuestionPanel jobId={jobId}/><div className="columns"><SpeakersPanel jobId={jobId} speakers={results.speakers} onUpdate={reload}/><TranscriptPanel segments={results.segments}/></div><a className="download" href={`/api/jobs/${jobId}/download`}>Скачать</a></section>}

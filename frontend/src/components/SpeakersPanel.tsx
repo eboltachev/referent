@@ -1,0 +1,2 @@
+import {patchSpeaker} from '../api/client';
+export default function SpeakersPanel({jobId,speakers,onUpdate}:any){return <div className="panel"><h3>Спикеры</h3>{speakers.map((s:any)=><div className="speaker" key={s.speaker_label}><b>{s.speaker_label}</b><input defaultValue={s.speaker_name||''} onBlur={async e=>{await patchSpeaker(jobId,s.speaker_label,e.currentTarget.value); onUpdate();}} placeholder="Имя спикера"/></div>)}</div>}
