@@ -1,0 +1,3 @@
+from typing import Protocol
+class WhisperXProcessor(Protocol):
+    def process(self, file_path: str) -> dict: ...
